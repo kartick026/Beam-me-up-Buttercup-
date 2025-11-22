@@ -1,0 +1,30 @@
+{
+    "name": "Beam Me Up, Buttercup!!",
+    "short_name": "Buttercup",
+    "description": "Epic space shooter game by Kartick Sharma",
+    "start_url": "/",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#1a1a1a",
+    "theme_color": "#00f0ff",
+    "icons": [
+        {
+            "src": "/icons/icon-original.jpg",
+            "sizes": "1024x1024",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-original.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-original.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any"
+        }
+    ]
+}
