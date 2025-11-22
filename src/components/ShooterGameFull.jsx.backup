@@ -1,0 +1,293 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { GameEngine } from '../engine/gameLoop';
+import { PlayerIcon } from './UI/PlayerIcon';
+import { EnemyIcon } from './UI/EnemyIcon';
+import { BossIcon } from './UI/BossIcon';
+import { BulletIcon } from './UI/BulletIcon';
+import { PowerupIcon } from './UI/PowerupIcon';
+
+export default function ShooterGameFull() {
+    const canvasRef = useRef(null);
+    const engineRef = useRef(null);
+    const requestRef = useRef(null);
+
+    // Game State for UI
+    const [gameState, setGameState] = useState('home'); // home, playing, paused, gameover
+    const [score, setScore] = useState(0);
+    const [health, setHealth] = useState(100);
+    const [level, setLevel] = useState(1);
+
+    // Input State
+    const inputRef = useRef({
+        keys: {},
+        mouse: { x: 0, y: 0 },
+        mouseDown: false,
+        joystick: { active: false, x: 0, y: 0 },
+        touchShoot: false,
+        dashRequest: false
+    });
+
+    // Audio Context
+    const audioCtxRef = useRef(null);
+
+    const initAudio = () => {
+        if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
+    };
+
+    const playSound = (type) => {
+        if (!audioCtxRef.current) return;
+        const ctx = audioCtxRef.current;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+
+        if (type === 'shoot') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1000, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start();
+            osc.stop(now + 0.1);
+        } else if (type === 'hit') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.linearRampToValueAtTime(60, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start();
+            osc.stop(now + 0.1);
+        } else if (type === 'powerup') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(900, now);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start();
+            osc.stop(now + 0.3);
+        } else if (type === 'bossSpawn') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 1.0);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 1.0);
+            osc.start();
+            osc.stop(now + 1.0);
+        }
+    };
+
+    const startGame = () => {
+        initAudio();
+        setGameState('playing');
+        setScore(0);
+        setHealth(100);
+        setLevel(1);
+
+        const canvas = canvasRef.current;
+        engineRef.current = new GameEngine(
+            canvas.width,
+            canvas.height,
+            () => setGameState('gameover'),
+            (s) => setScore(s),
+            (l) => setLevel(l),
+            (h) => setHealth(h),
+            playSound
+        );
+    };
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (canvasRef.current) {
+                canvasRef.current.width = window.innerWidth;
+                canvasRef.current.height = window.innerHeight;
+                if (engineRef.current) {
+                    engineRef.current.width = window.innerWidth;
+                    engineRef.current.height = window.innerHeight;
+                }
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        const handleKeyDown = (e) => {
+            inputRef.current.keys[e.key.toLowerCase()] = true;
+            if (e.key === 'p' || e.key === 'P') {
+                setGameState(prev => prev === 'playing' ? 'paused' : (prev === 'paused' ? 'playing' : prev));
+            }
+            if (e.key === 'Shift') inputRef.current.dashRequest = true;
+        };
+        const handleKeyUp = (e) => inputRef.current.keys[e.key.toLowerCase()] = false;
+
+        const handleMouseMove = (e) => {
+            inputRef.current.mouse.x = e.clientX;
+            inputRef.current.mouse.y = e.clientY;
+        };
+        const handleMouseDown = () => inputRef.current.mouseDown = true;
+        const handleMouseUp = () => inputRef.current.mouseDown = false;
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('mouseup', handleMouseUp);
+            cancelAnimationFrame(requestRef.current);
+        };
+    }, []);
+
+    useEffect(() => {
+        let lastTime = performance.now();
+        const loop = (time) => {
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+
+            if (gameState === 'playing' && engineRef.current) {
+                const ctx = canvasRef.current.getContext('2d');
+                engineRef.current.update(Math.min(dt, 0.1), inputRef.current);
+                engineRef.current.draw(ctx);
+            }
+            requestRef.current = requestAnimationFrame(loop);
+        };
+        requestRef.current = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [gameState]);
+
+    // Touch Controls
+    const touchStart = (e) => {
+        e.preventDefault(); // Prevent scrolling
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.clientX < window.innerWidth / 2) {
+                // Left side: Joystick
+                inputRef.current.joystick.id = t.identifier;
+                inputRef.current.joystick.startX = t.clientX;
+                inputRef.current.joystick.startY = t.clientY;
+                inputRef.current.joystick.active = true;
+                inputRef.current.joystick.x = 0;
+                inputRef.current.joystick.y = 0;
+            } else {
+                // Right side: Shoot
+                inputRef.current.touchShoot = true;
+            }
+        }
+    };
+
+    const touchMove = (e) => {
+        e.preventDefault();
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.identifier === inputRef.current.joystick.id) {
+                const dx = t.clientX - inputRef.current.joystick.startX;
+                const dy = t.clientY - inputRef.current.joystick.startY;
+                const maxDist = 50;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const clampedDist = Math.min(dist, maxDist);
+                const angle = Math.atan2(dy, dx);
+                inputRef.current.joystick.x = Math.cos(angle) * (clampedDist / maxDist);
+                inputRef.current.joystick.y = Math.sin(angle) * (clampedDist / maxDist);
+            }
+        }
+    };
+
+    const touchEnd = (e) => {
+        e.preventDefault();
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.identifier === inputRef.current.joystick.id) {
+                inputRef.current.joystick.active = false;
+                inputRef.current.joystick.x = 0;
+                inputRef.current.joystick.y = 0;
+
+                // Double tap for dash? Or just release?
+                // Requirement: "Dash mechanic (Shift or double-tap on mobile)"
+                // Implementing double tap is tricky with joystick.
+                // Let's use a dedicated dash button or detect quick swipe?
+                // For simplicity, let's say if drag was very short and quick?
+                // Or maybe just a dash button on screen.
+            } else {
+                inputRef.current.touchShoot = false;
+            }
+        }
+    };
+
+    return (
+        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
+            <canvas
+                ref={canvasRef}
+                onTouchStart={touchStart}
+                onTouchMove={touchMove}
+                onTouchEnd={touchEnd}
+                style={{ display: 'block' }}
+            />
+
+            {/* HUD */}
+        </div>
+    )
+}
+
+{/* Mobile Controls Overlay */ }
+{
+    gameState === 'playing' && (
+        <>
+            <div style={{ position: 'absolute', bottom: 50, left: 50, width: 100, height: 100, border: '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', pointerEvents: 'none' }}>
+                {/* Visual Joystick Anchor */}
+            </div>
+            <div style={{ position: 'absolute', bottom: 50, right: 50, width: 80, height: 80, background: 'rgba(255,0,0,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto' }}
+                onTouchStart={(e) => { e.preventDefault(); inputRef.current.dashRequest = true; }}
+            >
+                <span style={{ color: 'white', fontSize: 12 }}>DASH</span>
+            </div>
+        </>
+    )
+}
+
+{/* Menus */ }
+{
+    gameState === 'home' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', color: 'white' }}>
+            <h1 style={{ fontSize: 60, color: '#00f0ff', textShadow: '0 0 20px #00f0ff' }}>NEON SHOOTER</h1>
+            <div style={{ display: 'flex', gap: 20, marginBottom: 40 }}>
+                <PlayerIcon /><EnemyIcon /><BossIcon /><PowerupIcon type="rapid" />
+            </div>
+            <button onClick={startGame} style={{ padding: '15px 40px', fontSize: 24, background: '#00f0ff', border: 'none', borderRadius: 5, cursor: 'pointer', fontWeight: 'bold' }}>START GAME</button>
+            <p style={{ marginTop: 20 }}>WASD to Move | Mouse to Aim/Shoot | Shift to Dash</p>
+        </div>
+    )
+}
+
+{
+    gameState === 'paused' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', color: 'white' }}>
+            <h1>PAUSED</h1>
+            <button onClick={() => setGameState('playing')} style={{ padding: '10px 30px', fontSize: 20, cursor: 'pointer' }}>RESUME</button>
+        </div>
+    )
+}
+
+{
+    gameState === 'gameover' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(50,0,0,0.8)', color: 'white' }}>
+            <h1 style={{ color: 'red', fontSize: 50 }}>GAME OVER</h1>
+            <h2>Final Score: {score}</h2>
+            <button onClick={startGame} style={{ padding: '15px 40px', fontSize: 24, background: 'white', border: 'none', borderRadius: 5, cursor: 'pointer', marginTop: 20 }}>TRY AGAIN</button>
+        </div>
+    )
+}
+        </div >
+    );
+}
