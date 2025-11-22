@@ -26,6 +26,7 @@ export default function ShooterGameFull() {
     const [playerName, setPlayerName] = useState('');
     const [playerStats, setPlayerStats] = useState(null);
     const [isPortrait, setIsPortrait] = useState(false);
+    const [, forceUpdate] = useState(0);
 
     useEffect(() => {
         const checkOrientation = () => {
@@ -297,6 +298,7 @@ export default function ShooterGameFull() {
 
     useEffect(() => {
         let lastTime = performance.now();
+        let frameCount = 0;
         const loop = (time) => {
             const dt = (time - lastTime) / 1000;
             lastTime = time;
@@ -305,6 +307,12 @@ export default function ShooterGameFull() {
                 const ctx = canvasRef.current.getContext('2d');
                 engineRef.current.update(Math.min(dt, 0.1), inputRef.current);
                 engineRef.current.draw(ctx);
+
+                // Force re-render every 2 frames for joystick visuals
+                frameCount++;
+                if (frameCount % 2 === 0) {
+                    forceUpdate(prev => prev + 1);
+                }
             }
             requestRef.current = requestAnimationFrame(loop);
         };
