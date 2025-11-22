@@ -41,7 +41,8 @@ export default function ShooterGameFull() {
         keys: {},
         mouse: { x: 0, y: 0 },
         mouseDown: false,
-        joystick: { active: false, x: 0, y: 0 },
+        joystick: { active: false, x: 0, y: 0, startX: 0, startY: 0, id: null },
+        aimJoystick: { active: false, x: 0, y: 0, startX: 0, startY: 0, id: null },
         touchShoot: false,
         dashRequest: false
     });
@@ -311,13 +312,13 @@ export default function ShooterGameFull() {
         return () => cancelAnimationFrame(requestRef.current);
     }, [gameState]);
 
-    // Touch Controls
+    // Touch Controls - Twin Stick
     const touchStart = (e) => {
-        e.preventDefault(); // Prevent scrolling
+        e.preventDefault();
         for (let i = 0; i < e.changedTouches.length; i++) {
             const t = e.changedTouches[i];
             if (t.clientX < window.innerWidth / 2) {
-                // Left side: Joystick
+                // Left side: Movement Joystick
                 inputRef.current.joystick.id = t.identifier;
                 inputRef.current.joystick.startX = t.clientX;
                 inputRef.current.joystick.startY = t.clientY;
@@ -325,8 +326,14 @@ export default function ShooterGameFull() {
                 inputRef.current.joystick.x = 0;
                 inputRef.current.joystick.y = 0;
             } else {
-                // Right side: Shoot
-                inputRef.current.touchShoot = true;
+                // Right side: Aim Joystick
+                inputRef.current.aimJoystick.id = t.identifier;
+                inputRef.current.aimJoystick.startX = t.clientX;
+                inputRef.current.aimJoystick.startY = t.clientY;
+                inputRef.current.aimJoystick.active = true;
+                inputRef.current.aimJoystick.x = 0;
+                inputRef.current.aimJoystick.y = 0;
+                inputRef.current.touchShoot = true; // Auto-shoot when aiming
             }
         }
     };
@@ -335,6 +342,7 @@ export default function ShooterGameFull() {
         e.preventDefault();
         for (let i = 0; i < e.changedTouches.length; i++) {
             const t = e.changedTouches[i];
+            // Movement joystick
             if (t.identifier === inputRef.current.joystick.id) {
                 const dx = t.clientX - inputRef.current.joystick.startX;
                 const dy = t.clientY - inputRef.current.joystick.startY;
@@ -344,6 +352,17 @@ export default function ShooterGameFull() {
                 const angle = Math.atan2(dy, dx);
                 inputRef.current.joystick.x = Math.cos(angle) * (clampedDist / maxDist);
                 inputRef.current.joystick.y = Math.sin(angle) * (clampedDist / maxDist);
+            }
+            // Aim joystick
+            if (t.identifier === inputRef.current.aimJoystick.id) {
+                const dx = t.clientX - inputRef.current.aimJoystick.startX;
+                const dy = t.clientY - inputRef.current.aimJoystick.startY;
+                const maxDist = 50;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const clampedDist = Math.min(dist, maxDist);
+                const angle = Math.atan2(dy, dx);
+                inputRef.current.aimJoystick.x = Math.cos(angle) * (clampedDist / maxDist);
+                inputRef.current.aimJoystick.y = Math.sin(angle) * (clampedDist / maxDist);
             }
         }
     };
@@ -356,7 +375,13 @@ export default function ShooterGameFull() {
                 inputRef.current.joystick.active = false;
                 inputRef.current.joystick.x = 0;
                 inputRef.current.joystick.y = 0;
-            } else {
+                inputRef.current.joystick.id = null;
+            }
+            if (t.identifier === inputRef.current.aimJoystick.id) {
+                inputRef.current.aimJoystick.active = false;
+                inputRef.current.aimJoystick.x = 0;
+                inputRef.current.aimJoystick.y = 0;
+                inputRef.current.aimJoystick.id = null;
                 inputRef.current.touchShoot = false;
             }
         }
@@ -575,29 +600,34 @@ export default function ShooterGameFull() {
                         <span style={{ color: 'white', fontSize: 'min(14px, 3vw)', fontWeight: 'bold' }}>DASH</span>
                     </div>
 
-                    {/* Fire Button (Alternative to right-side touch) */}
-                    <div
-                        style={{
+
+                    {/* Aim Joystick Visual */}
+                    {inputRef.current.aimJoystick.active && (
+                        <div style={{
                             position: 'absolute',
-                            bottom: '15%',
-                            right: '5%',
-                            width: 'min(120px, 25vw)',
-                            height: 'min(120px, 25vw)',
-                            background: 'rgba(255, 50, 50, 0.2)',
-                            border: '2px solid rgba(255, 50, 50, 0.5)',
+                            left: inputRef.current.aimJoystick.startX - 50,
+                            top: inputRef.current.aimJoystick.startY - 50,
+                            width: 100,
+                            height: 100,
+                            border: '2px solid rgba(255, 50, 50, 0.3)',
+                            background: 'rgba(255, 50, 50, 0.05)',
                             borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            pointerEvents: 'auto',
-                            userSelect: 'none',
-                            touchAction: 'none'
-                        }}
-                        onTouchStart={(e) => { e.preventDefault(); inputRef.current.touchShoot = true; }}
-                        onTouchEnd={(e) => { e.preventDefault(); inputRef.current.touchShoot = false; }}
-                    >
-                        <span style={{ color: 'white', fontSize: 'min(16px, 3.5vw)', fontWeight: 'bold' }}>FIRE</span>
-                    </div>
+                            pointerEvents: 'none',
+                            transform: 'translate(-50%, -50%)'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                left: 50 + inputRef.current.aimJoystick.x * 50,
+                                top: 50 + inputRef.current.aimJoystick.y * 50,
+                                width: 40,
+                                height: 40,
+                                background: 'rgba(255, 50, 50, 0.5)',
+                                borderRadius: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                boxShadow: '0 0 10px #ff3232'
+                            }} />
+                        </div>
+                    )}
                 </>
             )}
 

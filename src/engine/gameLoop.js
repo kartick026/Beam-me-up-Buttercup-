@@ -130,7 +130,11 @@ export class GameEngine {
                 this.weaponUsage[this.player.weaponType]++;
 
                 let angle;
-                if (input.joystick.active) {
+                // Twin-stick: Use aim joystick if active
+                if (input.aimJoystick && input.aimJoystick.active && (input.aimJoystick.x !== 0 || input.aimJoystick.y !== 0)) {
+                    angle = Math.atan2(input.aimJoystick.y, input.aimJoystick.x);
+                } else if (input.joystick.active) {
+                    // Fallback to movement joystick if aim joystick not used
                     if (input.joystick.x !== 0 || input.joystick.y !== 0) {
                         angle = Math.atan2(input.joystick.y, input.joystick.x);
                     } else {
