@@ -25,6 +25,16 @@ export default function ShooterGameFull() {
     const [musicEnabled, setMusicEnabled] = useState(false);
     const [playerName, setPlayerName] = useState('');
     const [playerStats, setPlayerStats] = useState(null);
+    const [isPortrait, setIsPortrait] = useState(false);
+
+    useEffect(() => {
+        const checkOrientation = () => {
+            setIsPortrait(window.innerHeight > window.innerWidth);
+        };
+        window.addEventListener('resize', checkOrientation);
+        checkOrientation();
+        return () => window.removeEventListener('resize', checkOrientation);
+    }, []);
 
     // Input State
     const inputRef = useRef({
@@ -469,8 +479,8 @@ export default function ShooterGameFull() {
                     {/* Music Toggle */}
                     <div
                         style={{
-                            width: 40,
-                            height: 40,
+                            width: 50,
+                            height: 50,
                             background: 'rgba(255, 255, 255, 0.2)',
                             borderRadius: 5,
                             display: 'flex',
@@ -489,8 +499,8 @@ export default function ShooterGameFull() {
                     {/* Pause */}
                     <div
                         style={{
-                            width: 40,
-                            height: 40,
+                            width: 50,
+                            height: 50,
                             background: 'rgba(255, 255, 255, 0.2)',
                             borderRadius: 5,
                             display: 'flex',
@@ -523,6 +533,7 @@ export default function ShooterGameFull() {
                             width: 100,
                             height: 100,
                             border: '2px solid rgba(255, 255, 255, 0.3)',
+                            background: 'rgba(255, 255, 255, 0.05)',
                             borderRadius: '50%',
                             pointerEvents: 'none',
                             transform: 'translate(-50%, -50%)'
@@ -547,8 +558,8 @@ export default function ShooterGameFull() {
                             position: 'absolute',
                             bottom: '5%',
                             right: '25%',
-                            width: 'min(80px, 15vw)',
-                            height: 'min(80px, 15vw)',
+                            width: 'min(100px, 20vw)',
+                            height: 'min(100px, 20vw)',
                             background: 'rgba(0, 240, 255, 0.2)',
                             border: '2px solid rgba(0, 240, 255, 0.5)',
                             borderRadius: '50%',
@@ -570,8 +581,8 @@ export default function ShooterGameFull() {
                             position: 'absolute',
                             bottom: '15%',
                             right: '5%',
-                            width: 'min(100px, 20vw)',
-                            height: 'min(100px, 20vw)',
+                            width: 'min(120px, 25vw)',
+                            height: 'min(120px, 25vw)',
                             background: 'rgba(255, 50, 50, 0.2)',
                             border: '2px solid rgba(255, 50, 50, 0.5)',
                             borderRadius: '50%',
@@ -951,6 +962,28 @@ export default function ShooterGameFull() {
                     </div>
                 )
             }
+            {isPortrait && (
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'black',
+                    color: 'white',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    textAlign: 'center',
+                    padding: '20px'
+                }}>
+                    <div style={{ fontSize: '50px', marginBottom: '20px' }}>📱↻</div>
+                    <h2 style={{ color: '#00f0ff', fontFamily: 'monospace' }}>PLEASE ROTATE DEVICE</h2>
+                    <p style={{ fontFamily: 'monospace', color: '#aaa' }}>Landscape mode required for best experience</p>
+                </div>
+            )}
         </div >
     );
 }
