@@ -25,6 +25,7 @@ export default function ShooterGameFull() {
     const [musicEnabled, setMusicEnabled] = useState(true);
     const [sfxEnabled, setSfxEnabled] = useState(true);
     const [showHowToPlay, setShowHowToPlay] = useState(false);
+    const [lives, setLives] = useState(3); // 3 lives system
     const [playerName, setPlayerName] = useState('');
     const [playerStats, setPlayerStats] = useState(null);
     const [isPortrait, setIsPortrait] = useState(false);
@@ -213,6 +214,7 @@ export default function ShooterGameFull() {
         setScore(0);
         setHealth(100);
         setLevel(1);
+        setLives(3); // Reset lives to 3
 
         const canvas = canvasRef.current;
         canvas.width = window.innerWidth;
@@ -222,48 +224,77 @@ export default function ShooterGameFull() {
             canvas.width,
             canvas.height,
             async () => {
-                // Save score to database first
-                if (playerName) {
-                    const engine = engineRef.current;
-                    try {
-                        await gameAPI.saveScore(
-                            playerName,
-                            engine.score,
-                            engine.level,
-                            engine.kills,
-                            Math.floor(engine.playTime),
-                            // Combat stats
-                            engine.shotsFired,
-                            engine.shotsHit,
-                            engine.shotsFired > 0 ? (engine.shotsHit / engine.shotsFired) * 100 : 0,
-                            engine.damageDealt,
-                            engine.damageTaken,
-                            // Boss stats
-                            engine.bossesDefeated,
-                            engine.bossTypesDefeated ? engine.bossTypesDefeated.join(',') : '',
-                            // Power-up stats
-                            engine.powerupsCollected,
-                            engine.favoriteWeapon,
-                            engine.rapidFireUsed,
-                            engine.doubleShotUsed,
-                            engine.shieldUsed,
-                            engine.shotgunUsed,
-                            engine.laserUsed,
-                            engine.missileUsed,
-                            engine.pulseUsed,
-                            engine.healthCollected,
-                            // Survival stats
-                            engine.dashesUsed,
-                            engine.maxCombo,
-                            engine.perfectLevels,
-                            // Enemy stats
-                            engine.enemyTypesKilled ? engine.enemyTypesKilled.join(',') : ''
-                        );
-                    } catch (err) {
-                        console.error('Failed to save score:', err);
+                // Handle life loss instead of immediate game over
+                setLives(prevLives => {
+                    const newLives = prevLives - 1;
+
+                    if (newLives > 0) {
+                        // Still have lives left - respawn with reduced HP
+                        const newHP = newLives === 2 ? 75 : 50;
+                        setHealth(newHP);
+
+                        // Respawn player
+                        if (engineRef.current) {
+                            engineRef.current.player.health = newHP;
+                            engineRef.current.player.x = engineRef.current.width / 2;
+                            engineRef.current.player.y = engineRef.current.height / 2;
+                            engineRef.current.gameOver = false;
+
+                            // Clear enemies and bullets for a fresh start
+                            engineRef.current.enemies = [];
+                            engineRef.current.bullets = [];
+                        }
+
+                        playSound('powerup'); // Play respawn sound
+                        return newLives;
+                    } else {
+                        // No lives left - actual game over
+                        (async () => {
+                            if (playerName) {
+                                const engine = engineRef.current;
+                                try {
+                                    await gameAPI.saveScore(
+                                        playerName,
+                                        engine.score,
+                                        engine.level,
+                                        engine.kills,
+                                        Math.floor(engine.playTime),
+                                        // Combat stats
+                                        engine.shotsFired,
+                                        engine.shotsHit,
+                                        engine.shotsFired > 0 ? (engine.shotsHit / engine.shotsFired) * 100 : 0,
+                                        engine.damageDealt,
+                                        engine.damageTaken,
+                                        // Boss stats
+                                        engine.bossesDefeated,
+                                        engine.bossTypesDefeated ? engine.bossTypesDefeated.join(',') : '',
+                                        // Power-up stats
+                                        engine.powerupsCollected,
+                                        engine.favoriteWeapon,
+                                        engine.rapidFireUsed,
+                                        engine.doubleShotUsed,
+                                        engine.shieldUsed,
+                                        engine.shotgunUsed,
+                                        engine.laserUsed,
+                                        engine.missileUsed,
+                                        engine.pulseUsed,
+                                        engine.healthCollected,
+                                        // Survival stats
+                                        engine.dashesUsed,
+                                        engine.maxCombo,
+                                        engine.perfectLevels,
+                                        // Enemy stats
+                                        engine.enemyTypesKilled ? engine.enemyTypesKilled.join(',') : ''
+                                    );
+                                } catch (err) {
+                                    console.error('Failed to save score:', err);
+                                }
+                            }
+                            setGameState('gameover');
+                        })();
+                        return 0;
                     }
-                }
-                setGameState('gameover');
+                });
             },
             (s) => setScore(s),
             (l) => setLevel(l),
@@ -462,6 +493,20 @@ export default function ShooterGameFull() {
                         </div>
                     </div>
                     <div>LEVEL: {level}</div>
+
+                    {/* Lives Display */}
+                    <div style={{ marginTop: '5px', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                        {[...Array(3)].map((_, i) => (
+                            <span key={i} style={{
+                                fontSize: '20px',
+                                opacity: i < lives ? 1 : 0.3,
+                                filter: i < lives ? 'drop-shadow(0 0 3px #ff0055)' : 'none',
+                                transition: 'all 0.3s ease'
+                            }}>
+                                ❤️
+                            </span>
+                        ))}
+                    </div>
 
                     {/* Level Progress */}
                     {engineRef.current && engineRef.current.bosses.length === 0 && (
@@ -908,6 +953,7 @@ export default function ShooterGameFull() {
 
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', lineHeight: 1.6, fontFamily: "'GameFont', cursive" }}>
                                                 <div><strong style={{ color: '#00f0ff' }}>🎯 Objective:</strong> Survive waves of enemies and defeat bosses!</div>
+                                                <div><strong style={{ color: '#00f0ff' }}>❤️ Lives:</strong> You have 3 lives! Lose a life and respawn with less HP (100 → 75 → 50)</div>
                                                 <div><strong style={{ color: '#00f0ff' }}>⌨️ Movement:</strong> Use WASD keys to move around</div>
                                                 <div><strong style={{ color: '#00f0ff' }}>🖱️ Shooting:</strong> Aim with mouse, click to shoot</div>
                                                 <div><strong style={{ color: '#00f0ff' }}>⚡ Dash:</strong> Press SHIFT to dash</div>
