@@ -15,25 +15,26 @@ export default function ThreeDHomeScreen({ onStartGame }) {
             }}>
                 <h1 style={{
                     fontFamily: "'GameFont', cursive",
-                    fontSize: 'clamp(40px, 8vw, 80px)', // Slightly smaller to fit long title
+                    fontSize: 'clamp(28px, 6vw, 80px)', // Smaller minimum size for mobile
                     fontWeight: '900',
                     color: '#fff',
                     margin: '0 0 20px 0',
                     textTransform: 'uppercase',
-                    letterSpacing: '5px',
+                    letterSpacing: 'clamp(2px, 1vw, 5px)', // Tighter spacing on mobile
                     textAlign: 'center',
                     textShadow: '0 0 20px #00f0ff, 0 0 40px #00f0ff, 0 0 80px #00f0ff',
                     animation: 'pulse 2s infinite',
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    maxWidth: '95vw' // Ensure it doesn't overflow width
                 }}>
                     BEAM ME UP,<br />BUTTERCUP!!
                 </h1>
 
                 <p style={{
                     color: '#00f0ff',
-                    fontSize: 'clamp(16px, 3vw, 24px)',
-                    letterSpacing: '5px',
-                    marginBottom: '60px',
+                    fontSize: 'clamp(12px, 3vw, 24px)',
+                    letterSpacing: 'clamp(2px, 1vw, 5px)',
+                    marginBottom: 'clamp(30px, 8vh, 60px)',
                     textShadow: '0 0 10px #00f0ff',
                     fontFamily: "'GameFont', cursive"
                 }}>
@@ -43,8 +44,8 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                 <button
                     onClick={onStartGame}
                     style={{
-                        padding: '20px 80px',
-                        fontSize: 'clamp(24px, 5vw, 36px)',
+                        padding: 'clamp(12px, 3vw, 20px) clamp(30px, 6vw, 80px)', // Responsive padding
+                        fontSize: 'clamp(16px, 4vw, 36px)', // Smaller font on mobile
                         fontWeight: '900',
                         color: 'black',
                         background: '#00f0ff',

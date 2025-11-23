@@ -72,9 +72,9 @@ export default function PlayerStatsDisplay({ playerName }) {
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                gap: '15px',
-                fontSize: 'clamp(12px, 2.5vw, 14px)'
+                gridTemplateColumns: 'repeat(3, 1fr)', // Force 3 columns on all screens
+                gap: 'clamp(5px, 2vw, 15px)', // Smaller gap on mobile
+                fontSize: 'clamp(10px, 2vw, 14px)' // Smaller text on mobile
             }}>
                 <StatCard
                     icon="🎮"
@@ -123,7 +123,7 @@ function StatCard({ icon, label, value, color }) {
             background: 'rgba(255, 255, 255, 0.05)',
             border: `1px solid ${color}40`,
             borderRadius: '10px',
-            padding: '12px',
+            padding: 'clamp(5px, 1.5vw, 12px)', // Smaller padding on mobile
             textAlign: 'center',
             transition: 'all 0.3s ease'
         }}
@@ -136,9 +136,9 @@ function StatCard({ icon, label, value, color }) {
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
-            <div style={{ fontSize: '24px', marginBottom: '5px' }}>{icon}</div>
+            <div style={{ fontSize: 'clamp(16px, 4vw, 24px)', marginBottom: '5px' }}>{icon}</div>
             <div style={{
-                fontSize: '20px',
+                fontSize: 'clamp(14px, 3vw, 20px)',
                 fontWeight: '900',
                 color: color,
                 marginBottom: '3px'

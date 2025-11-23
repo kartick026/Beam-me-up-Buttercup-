@@ -1166,27 +1166,27 @@ return (
                 }}>
                     <h1 style={{
                         color: '#ff3366',
-                        fontSize: 'min(60px, 12vw)',
+                        fontSize: 'min(40px, 10vw)', // Smaller title
                         fontWeight: '900',
                         textShadow: '0 0 30px rgba(255, 51, 102, 0.6)',
-                        margin: '0 0 20px 0'
+                        margin: '0 0 10px 0' // Reduced margin
                     }}>GAME OVER</h1>
 
                     <h2 style={{
-                        fontSize: '32px',
-                        marginBottom: '30px',
+                        fontSize: 'clamp(20px, 5vw, 32px)',
+                        marginBottom: '20px', // Reduced margin
                         color: '#fff'
                     }}>Final Score: <span style={{ color: '#ffed4e' }}>{score}</span></h2>
 
-                    <div style={{ marginBottom: '30px', width: '90%', maxWidth: '600px' }}>
+                    <div style={{ marginBottom: '20px', width: '95%', maxWidth: '600px' }}>
                         <PlayerStatsDisplay playerName={playerName} />
                     </div>
 
                     <button
                         onClick={startGame}
                         style={{
-                            padding: '15px 50px',
-                            fontSize: '24px',
+                            padding: 'clamp(10px, 3vw, 15px) clamp(30px, 6vw, 50px)', // Smaller button
+                            fontSize: 'clamp(16px, 4vw, 24px)',
                             fontWeight: 'bold',
                             color: 'black',
                             background: 'linear-gradient(135deg, #00f0ff, #00d4ff)',
