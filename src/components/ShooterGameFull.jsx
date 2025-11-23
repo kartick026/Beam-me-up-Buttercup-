@@ -22,7 +22,9 @@ export default function ShooterGameFull() {
     const [score, setScore] = useState(0);
     const [health, setHealth] = useState(100);
     const [level, setLevel] = useState(1);
-    const [musicEnabled, setMusicEnabled] = useState(false);
+    const [musicEnabled, setMusicEnabled] = useState(true);
+    const [sfxEnabled, setSfxEnabled] = useState(true);
+    const [showHowToPlay, setShowHowToPlay] = useState(false);
     const [playerName, setPlayerName] = useState('');
     const [playerStats, setPlayerStats] = useState(null);
     const [isPortrait, setIsPortrait] = useState(false);
@@ -61,7 +63,7 @@ export default function ShooterGameFull() {
     };
 
     const playSound = (type) => {
-        if (!audioCtxRef.current) return;
+        if (!audioCtxRef.current || !sfxEnabled) return;
         const ctx = audioCtxRef.current;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -163,7 +165,24 @@ export default function ShooterGameFull() {
 
     useEffect(() => {
         musicRef.current = new MusicSystem();
+
+        // Resume audio context on first user interaction
+        const handleInteraction = () => {
+            if (musicRef.current && musicRef.current.audioCtx.state === 'suspended') {
+                musicRef.current.audioCtx.resume().then(() => {
+                    if (musicEnabled && gameState !== 'gameover') {
+                        musicRef.current.startMusic();
+                    }
+                }).catch(e => console.log("Audio resume failed:", e));
+            }
+        };
+
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('touchstart', handleInteraction);
+
         return () => {
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
             if (musicRef.current) musicRef.current.stopMusic();
         };
     }, []);
@@ -171,12 +190,16 @@ export default function ShooterGameFull() {
     useEffect(() => {
         if (musicRef.current) {
             if (musicEnabled) {
-                if (gameState === 'playing') {
-                    musicRef.current.startMusic();
-                } else if (gameState === 'gameover') {
+                // Initialize audio context if needed (for autoplay policies)
+                if (musicRef.current.audioCtx.state === 'suspended') {
+                    musicRef.current.audioCtx.resume().catch(e => console.log("Audio resume failed:", e));
+                }
+
+                if (gameState === 'gameover') {
                     musicRef.current.playGameOverTheme();
                 } else {
-                    musicRef.current.stopMusic();
+                    // Play main theme for home, setup, playing, and paused
+                    musicRef.current.startMusic();
                 }
             } else {
                 musicRef.current.stopMusic();
@@ -412,7 +435,7 @@ export default function ShooterGameFull() {
                     top: 20,
                     left: 20,
                     color: 'white',
-                    fontFamily: 'monospace',
+                    fontFamily: "'GameFont', cursive",
                     fontSize: 'min(20px, 5vw)', // Responsive font size
                     pointerEvents: 'none',
                     userSelect: 'none'
@@ -526,7 +549,27 @@ export default function ShooterGameFull() {
                         onClick={() => setMusicEnabled(!musicEnabled)}
                         onTouchStart={(e) => { e.stopPropagation(); setMusicEnabled(!musicEnabled); }}
                     >
-                        <span style={{ fontSize: 20 }}>{musicEnabled ? '🔊' : '🔇'}</span>
+                        <span style={{ fontSize: 20 }}>{musicEnabled ? '🎵' : '🔇'}</span>
+                    </div>
+
+                    {/* SFX Toggle */}
+                    <div
+                        style={{
+                            width: 50,
+                            height: 50,
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: 5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            pointerEvents: 'auto',
+                            zIndex: 100
+                        }}
+                        onClick={() => setSfxEnabled(!sfxEnabled)}
+                        onTouchStart={(e) => { e.stopPropagation(); setSfxEnabled(!sfxEnabled); }}
+                    >
+                        <span style={{ fontSize: 20 }}>{sfxEnabled ? '🔊' : '🔇'}</span>
                     </div>
 
                     {/* Pause */}
@@ -657,199 +700,310 @@ export default function ShooterGameFull() {
                     <StarfieldBackground>
                         <div style={{
                             width: '100%',
-                            minHeight: '100%',
+                            height: '100%',
+                            overflow: 'hidden', // Prevent scrolling
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            padding: '20px',
-                            gap: '30px',
-                            background: 'rgba(0,0,0,0.4)' // Slight overlay for readability
+                            padding: '10px',
+                            gap: '10px', // Reduced gap
+                            background: 'rgba(0,0,0,0.4)'
                         }}>
-                            <h1 style={{
-                                fontSize: 'clamp(32px, 6vw, 48px)',
-                                fontWeight: '900',
-                                color: 'white',
-                                margin: 0,
-                                textAlign: 'center',
-                                textShadow: '0 0 10px #00f0ff, 0 0 20px #00f0ff',
-                                letterSpacing: '2px'
-                            }}>
-                                ENTER YOUR NAME
-                            </h1>
-
-                            <input
-                                type="text"
-                                placeholder="Player Name"
-                                value={playerName}
-                                onChange={(e) => setPlayerName(e.target.value)}
-                                maxLength={20}
-                                style={{
-                                    padding: '15px 30px',
-                                    fontSize: 'clamp(18px, 3vw, 24px)',
-                                    fontWeight: '600',
-                                    textAlign: 'center',
-                                    background: 'rgba(0, 0, 0, 0.6)',
-                                    border: '2px solid #00f0ff',
-                                    borderRadius: '10px',
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', maxWidth: '600px' }}>
+                                <h1 style={{
+                                    fontSize: 'clamp(32px, 6vw, 48px)',
+                                    fontWeight: '900',
                                     color: 'white',
-                                    outline: 'none',
-                                    width: 'min(400px, 80vw)',
-                                    fontFamily: 'monospace',
-                                    boxShadow: '0 0 15px rgba(0, 240, 255, 0.3)'
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.boxShadow = '0 0 25px rgba(0, 240, 255, 0.6)';
-                                    e.target.style.background = 'rgba(0, 0, 0, 0.8)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.3)';
-                                    e.target.style.background = 'rgba(0, 0, 0, 0.6)';
-                                }}
-                                autoFocus
-                            />
-
-                            {/* Player Stats Display */}
-                            {isLoadingStats && (
-                                <div style={{ color: '#00f0ff', fontFamily: 'monospace', marginBottom: '10px' }}>
-                                    Loading stats...
-                                </div>
-                            )}
-                            {!isLoadingStats && playerStats && playerStats.games_played > 0 && (
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(2, 1fr)',
-                                    gap: '10px',
-                                    background: 'rgba(0, 240, 255, 0.1)',
-                                    padding: '15px',
-                                    borderRadius: '10px',
-                                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                                    width: 'min(400px, 80vw)',
-                                    marginTop: '-20px',
-                                    marginBottom: '10px'
-                                }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '12px', color: '#aaa' }}>HIGH SCORE</div>
-                                        <div style={{ fontSize: '20px', color: '#ffff00', fontWeight: 'bold' }}>{playerStats.high_score}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '12px', color: '#aaa' }}>TOTAL KILLS</div>
-                                        <div style={{ fontSize: '20px', color: '#ff0055', fontWeight: 'bold' }}>{playerStats.total_kills}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '12px', color: '#aaa' }}>GAMES PLAYED</div>
-                                        <div style={{ fontSize: '20px', color: '#00f0ff', fontWeight: 'bold' }}>{playerStats.games_played}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '12px', color: '#aaa' }}>MAX LEVEL</div>
-                                        <div style={{ fontSize: '20px', color: '#00ff00', fontWeight: 'bold' }}>{playerStats.max_level}</div>
-                                    </div>
-                                </div>
-                            )}
-                            <label htmlFor="musicToggle" style={{ fontSize: '18px', cursor: 'pointer', fontWeight: 'bold', fontFamily: 'monospace', color: '#00f0ff' }}>Enable Music 🎵</label>
-
-
-                            <div style={{
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                border: '1px solid #00f0ff',
-                                borderRadius: '15px',
-                                padding: 'clamp(20px, 4vw, 40px)',
-                                maxWidth: '600px',
-                                width: '90%',
-                                boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)'
-                            }}>
-                                <h2 style={{
-                                    fontSize: 'clamp(20px, 3.5vw, 28px)',
-                                    fontWeight: '800',
-                                    color: '#00f0ff',
-                                    margin: '0 0 20px 0',
+                                    margin: 0,
                                     textAlign: 'center',
-                                    textShadow: '0 0 10px rgba(0, 240, 255, 0.5)'
+                                    textShadow: '0 0 10px #00f0ff, 0 0 20px #00f0ff',
+                                    letterSpacing: '2px'
                                 }}>
-                                    🎮 HOW TO PLAY
-                                </h2>
+                                    ENTER YOUR NAME
+                                </h1>
 
-                                <div style={{
-                                    color: 'rgba(255, 255, 255, 0.9)',
-                                    fontSize: 'clamp(14px, 2.5vw, 16px)',
-                                    lineHeight: 1.8,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '12px',
-                                    fontFamily: 'monospace'
-                                }}>
-                                    <div><strong style={{ color: '#00f0ff' }}>🎯 Objective:</strong> Survive waves of enemies and defeat bosses!</div>
-                                    <div><strong style={{ color: '#00f0ff' }}>⌨️ Movement:</strong> Use WASD keys to move around</div>
-                                    <div><strong style={{ color: '#00f0ff' }}>🖱️ Shooting:</strong> Aim with mouse, click to shoot</div>
-                                    <div><strong style={{ color: '#00f0ff' }}>⚡ Dash:</strong> Press SHIFT to dash and dodge</div>
-                                    <div><strong style={{ color: '#00f0ff' }}>🎁 Power-ups:</strong> Collect letters for special weapons!</div>
-                                    <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(0, 240, 255, 0.1)', borderRadius: '8px', fontSize: 'clamp(12px, 2vw, 14px)', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
-                                        <strong>Power-ups:</strong> R=Rapid Fire, D=Double Shot, S=Shield, SG=Shotgun, L=Laser, M=Missile, P=Pulse, ❤=Health
+                                <input
+                                    type="text"
+                                    placeholder="Player Name"
+                                    value={playerName}
+                                    onChange={(e) => setPlayerName(e.target.value)}
+                                    maxLength={20}
+                                    style={{
+                                        padding: '10px 20px',
+                                        fontSize: 'clamp(18px, 3vw, 24px)',
+                                        fontWeight: '600',
+                                        textAlign: 'center',
+                                        background: 'rgba(0, 0, 0, 0.6)',
+                                        border: '2px solid #00f0ff',
+                                        borderRadius: '10px',
+                                        color: 'white',
+                                        outline: 'none',
+                                        width: 'min(400px, 80vw)',
+                                        fontFamily: "'GameFont', cursive",
+                                        boxShadow: '0 0 15px rgba(0, 240, 255, 0.3)'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.boxShadow = '0 0 25px rgba(0, 240, 255, 0.6)';
+                                        e.target.style.background = 'rgba(0, 0, 0, 0.8)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.3)';
+                                        e.target.style.background = 'rgba(0, 0, 0, 0.6)';
+                                    }}
+                                    autoFocus
+                                />
+
+                                {/* Player Stats Display */}
+                                {isLoadingStats && (
+                                    <div style={{ color: '#00f0ff', fontFamily: "'GameFont', cursive", marginBottom: '10px' }}>
+                                        Loading stats...
+                                    </div>
+                                )}
+                                {!isLoadingStats && playerStats && playerStats.games_played > 0 && (
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '10px',
+                                        background: 'rgba(0, 240, 255, 0.1)',
+                                        padding: '15px',
+                                        borderRadius: '10px',
+                                        border: '1px solid rgba(0, 240, 255, 0.3)',
+                                        width: 'min(400px, 80vw)',
+                                        marginTop: '-20px',
+                                        marginBottom: '10px'
+                                    }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '12px', color: '#aaa' }}>HIGH SCORE</div>
+                                            <div style={{ fontSize: '20px', color: '#ffff00', fontWeight: 'bold' }}>{playerStats.high_score}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '12px', color: '#aaa' }}>TOTAL KILLS</div>
+                                            <div style={{ fontSize: '20px', color: '#ff0055', fontWeight: 'bold' }}>{playerStats.total_kills}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '12px', color: '#aaa' }}>GAMES PLAYED</div>
+                                            <div style={{ fontSize: '20px', color: '#00f0ff', fontWeight: 'bold' }}>{playerStats.games_played}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '12px', color: '#aaa' }}>MAX LEVEL</div>
+                                            <div style={{ fontSize: '20px', color: '#00ff00', fontWeight: 'bold' }}>{playerStats.max_level}</div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px', justifyContent: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <input
+                                            type="checkbox"
+                                            id="musicToggle"
+                                            checked={musicEnabled}
+                                            onChange={(e) => setMusicEnabled(e.target.checked)}
+                                            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                        />
+                                        <label htmlFor="musicToggle" style={{ fontSize: '18px', cursor: 'pointer', fontWeight: 'bold', fontFamily: "'GameFont', cursive", color: '#00f0ff' }}>
+                                            Music 🎵
+                                        </label>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <input
+                                            type="checkbox"
+                                            id="sfxToggle"
+                                            checked={sfxEnabled}
+                                            onChange={(e) => setSfxEnabled(e.target.checked)}
+                                            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                        />
+                                        <label htmlFor="sfxToggle" style={{ fontSize: '18px', cursor: 'pointer', fontWeight: 'bold', fontFamily: "'GameFont', cursive", color: '#00f0ff' }}>
+                                            SFX 🔊
+                                        </label>
                                     </div>
                                 </div>
+
+
+                                <button
+                                    onClick={() => setShowHowToPlay(true)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: '2px solid #00f0ff',
+                                        color: '#00f0ff',
+                                        padding: '10px 20px',
+                                        borderRadius: '20px',
+                                        cursor: 'pointer',
+                                        fontFamily: "'GameFont', cursive",
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                        marginTop: '10px',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 0 10px rgba(0, 240, 255, 0.3)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = 'rgba(0, 240, 255, 0.2)';
+                                        e.target.style.boxShadow = '0 0 20px rgba(0, 240, 255, 0.6)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'transparent';
+                                        e.target.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.3)';
+                                    }}
+                                >
+                                    🎮 HOW TO PLAY
+                                </button>
+
+                                {showHowToPlay && (
+                                    <div style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        background: 'rgba(0, 0, 0, 0.85)',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        zIndex: 1000,
+                                        backdropFilter: 'blur(5px)'
+                                    }} onClick={() => setShowHowToPlay(false)}>
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                background: 'rgba(10, 10, 20, 0.95)',
+                                                border: '2px solid #00f0ff',
+                                                borderRadius: '15px',
+                                                padding: '25px',
+                                                maxWidth: '600px',
+                                                width: '90%',
+                                                maxHeight: '90vh',
+                                                overflowY: 'auto',
+                                                boxShadow: '0 0 50px rgba(0, 240, 255, 0.3)',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <button
+                                                onClick={() => setShowHowToPlay(false)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '10px',
+                                                    right: '15px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#ff0055',
+                                                    fontSize: '24px',
+                                                    cursor: 'pointer',
+                                                    fontFamily: 'Arial',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                ✕
+                                            </button>
+
+                                            <h2 style={{
+                                                fontSize: '24px',
+                                                color: '#00f0ff',
+                                                textAlign: 'center',
+                                                marginTop: '0',
+                                                marginBottom: '20px',
+                                                textShadow: '0 0 10px rgba(0, 240, 255, 0.5)',
+                                                fontFamily: "'GameFont', cursive"
+                                            }}>
+                                                🎮 HOW TO PLAY
+                                            </h2>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', lineHeight: 1.6, fontFamily: "'GameFont', cursive" }}>
+                                                <div><strong style={{ color: '#00f0ff' }}>🎯 Objective:</strong> Survive waves of enemies and defeat bosses!</div>
+                                                <div><strong style={{ color: '#00f0ff' }}>⌨️ Movement:</strong> Use WASD keys to move around</div>
+                                                <div><strong style={{ color: '#00f0ff' }}>🖱️ Shooting:</strong> Aim with mouse, click to shoot</div>
+                                                <div><strong style={{ color: '#00f0ff' }}>⚡ Dash:</strong> Press SHIFT to dash</div>
+
+                                                <div style={{ marginTop: '10px', borderTop: '1px solid rgba(0,240,255,0.3)', paddingTop: '15px' }}>
+                                                    <div style={{ fontSize: '1.1em', color: '#aaa', marginBottom: '10px', textAlign: 'center' }}>Power-ups:</div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '15px', fontSize: '12px' }}>
+                                                        <div style={{ color: '#00ff00', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>⚡</span> Rapid</div>
+                                                        <div style={{ color: '#ffff00', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>✌️</span> Double</div>
+                                                        <div style={{ color: '#00ffff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>🛡️</span> Shield</div>
+                                                        <div style={{ color: '#ff6600', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>∴</span> Shotgun</div>
+                                                        <div style={{ color: '#0066ff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>┃</span> Laser</div>
+                                                        <div style={{ color: '#ff0066', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>🚀</span> Missile</div>
+                                                        <div style={{ color: '#ff3366', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>❤</span> Health</div>
+                                                        <div style={{ color: '#00ffaa', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '24px' }}>🌀</span> Pulse</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    marginTop: '20px',
+                                                    textAlign: 'center',
+                                                    color: '#ff0055',
+                                                    fontStyle: 'italic',
+                                                    fontSize: '14px',
+                                                    textShadow: '0 0 5px rgba(255, 0, 85, 0.5)'
+                                                }}>
+                                                    "if u dont like this game, u gotta love it honey!!"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    if (playerName.trim()) {
-                                        startGame();
-                                    } else {
-                                        alert('Please enter your name!');
-                                    }
-                                }}
-                                style={{
-                                    padding: '18px 60px',
-                                    fontSize: 'clamp(24px, 4vw, 32px)',
-                                    fontWeight: '900',
-                                    color: 'black',
-                                    background: '#00f0ff',
-                                    border: 'none',
-                                    borderRadius: '5px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'monospace',
-                                    letterSpacing: '4px',
-                                    boxShadow: '0 0 20px #00f0ff, 0 0 40px #00f0ff',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform = 'scale(1.05)';
-                                    e.target.style.background = '#fff';
-                                    e.target.style.boxShadow = '0 0 40px #fff, 0 0 80px #00f0ff';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = 'scale(1)';
-                                    e.target.style.background = '#00f0ff';
-                                    e.target.style.boxShadow = '0 0 20px #00f0ff, 0 0 40px #00f0ff';
-                                }}
-                            >
-                                START GAME
-                            </button>
+                            <div style={{ display: 'flex', gap: '20px', marginTop: '10px', flexShrink: 0 }}>
+                                <button
+                                    onClick={() => {
+                                        if (playerName.trim()) {
+                                            startGame();
+                                        } else {
+                                            alert('Please enter your name!');
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '15px 50px',
+                                        fontSize: 'clamp(24px, 4vw, 32px)',
+                                        fontWeight: '900',
+                                        color: 'black',
+                                        background: '#00f0ff',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'pointer',
+                                        fontFamily: "'GameFont', cursive",
+                                        letterSpacing: '4px',
+                                        boxShadow: '0 0 20px #00f0ff, 0 0 40px #00f0ff',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = 'scale(1.05)';
+                                        e.target.style.background = '#fff';
+                                        e.target.style.boxShadow = '0 0 40px #fff, 0 0 80px #00f0ff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = 'scale(1)';
+                                        e.target.style.background = '#00f0ff';
+                                        e.target.style.boxShadow = '0 0 20px #00f0ff, 0 0 40px #00f0ff';
+                                    }}
+                                >
+                                    START GAME
+                                </button>
 
-                            <button
-                                onClick={() => setGameState('home')}
-                                style={{
-                                    padding: '10px 30px',
-                                    fontSize: 'clamp(14px, 2.5vw, 16px)',
-                                    fontWeight: '600',
-                                    color: '#00f0ff',
-                                    background: 'transparent',
-                                    border: '2px solid #00f0ff',
-                                    borderRadius: '25px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    fontFamily: 'monospace'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background = 'rgba(0, 240, 255, 0.1)';
-                                    e.target.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'transparent';
-                                    e.target.style.boxShadow = 'none';
-                                }}
-                            >
-                                ← BACK
-                            </button>
+                                <button
+                                    onClick={() => setGameState('home')}
+                                    style={{
+                                        padding: '10px 30px',
+                                        fontSize: 'clamp(14px, 2.5vw, 16px)',
+                                        fontWeight: '600',
+                                        color: '#00f0ff',
+                                        background: 'transparent',
+                                        border: '2px solid #00f0ff',
+                                        borderRadius: '25px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        fontFamily: "'GameFont', cursive"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = 'rgba(0, 240, 255, 0.1)';
+                                        e.target.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.4)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'transparent';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                >
+                                    ← BACK
+                                </button>
+                            </div>
                         </div>
                     </StarfieldBackground>
                 </div >
@@ -900,6 +1054,52 @@ export default function ShooterGameFull() {
                             }}
                         >
                             RESUME
+                        </button>
+
+                        <button
+                            onClick={() => setMusicEnabled(!musicEnabled)}
+                            style={{
+                                marginTop: '20px',
+                                padding: '10px 30px',
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                color: musicEnabled ? '#00f0ff' : '#ff3366',
+                                background: 'rgba(0, 0, 0, 0.5)',
+                                border: `2px solid ${musicEnabled ? '#00f0ff' : '#ff3366'}`,
+                                borderRadius: '30px',
+                                cursor: 'pointer',
+                                fontFamily: "'GameFont', cursive",
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                width: '220px',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            {musicEnabled ? 'MUSIC: ON' : 'MUSIC: OFF'}
+                        </button>
+
+                        <button
+                            onClick={() => setSfxEnabled(!sfxEnabled)}
+                            style={{
+                                marginTop: '10px',
+                                padding: '10px 30px',
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                color: sfxEnabled ? '#00f0ff' : '#ff3366',
+                                background: 'rgba(0, 0, 0, 0.5)',
+                                border: `2px solid ${sfxEnabled ? '#00f0ff' : '#ff3366'}`,
+                                borderRadius: '30px',
+                                cursor: 'pointer',
+                                fontFamily: "'GameFont', cursive",
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                width: '220px',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            {sfxEnabled ? 'SFX: ON' : 'SFX: OFF'}
                         </button>
                     </div>
                 )
@@ -1000,28 +1200,30 @@ export default function ShooterGameFull() {
                     </div>
                 )
             }
-            {isPortrait && (
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'black',
-                    color: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    textAlign: 'center',
-                    padding: '20px'
-                }}>
-                    <div style={{ fontSize: '50px', marginBottom: '20px' }}>📱↻</div>
-                    <h2 style={{ color: '#00f0ff', fontFamily: 'monospace' }}>PLEASE ROTATE DEVICE</h2>
-                    <p style={{ fontFamily: 'monospace', color: '#aaa' }}>Landscape mode required for best experience</p>
-                </div>
-            )}
+            {
+                isPortrait && (
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'black',
+                        color: 'white',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999,
+                        textAlign: 'center',
+                        padding: '20px'
+                    }}>
+                        <div style={{ fontSize: '50px', marginBottom: '20px' }}>📱↻</div>
+                        <h2 style={{ color: '#00f0ff', fontFamily: "'GameFont', cursive" }}>PLEASE ROTATE DEVICE</h2>
+                        <p style={{ fontFamily: "'GameFont', cursive", color: '#aaa' }}>Landscape mode required for best experience</p>
+                    </div>
+                )
+            }
         </div >
     );
 }

@@ -14,6 +14,7 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                 background: 'radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%)'
             }}>
                 <h1 style={{
+                    fontFamily: "'GameFont', cursive",
                     fontSize: 'clamp(40px, 8vw, 80px)', // Slightly smaller to fit long title
                     fontWeight: '900',
                     color: '#fff',
@@ -34,7 +35,7 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                     letterSpacing: '5px',
                     marginBottom: '60px',
                     textShadow: '0 0 10px #00f0ff',
-                    fontFamily: 'monospace'
+                    fontFamily: "'GameFont', cursive"
                 }}>
                     BY KARTICK SHARMA
                 </p>
@@ -50,7 +51,7 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                         border: 'none',
                         borderRadius: '5px',
                         cursor: 'pointer',
-                        fontFamily: 'monospace',
+                        fontFamily: "'GameFont', cursive",
                         letterSpacing: '5px',
                         boxShadow: '0 0 20px #00f0ff, 0 0 40px #00f0ff',
                         transition: 'all 0.2s ease',
@@ -77,7 +78,7 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                     bottom: '20px',
                     color: 'rgba(255,255,255,0.5)',
                     fontSize: '12px',
-                    fontFamily: 'monospace'
+                    fontFamily: "'GameFont', cursive"
                 }}>
                     v1.0.0 • REACT SHOOTER
                 </div>

@@ -1,6 +1,5 @@
-// API service for communicating with the backend
-
-const API_URL = 'http://localhost:3001/api';
+// API service for communicating with Supabase
+import { gameDB } from './supabase.js';
 
 export const gameAPI = {
     // Save a score
@@ -13,49 +12,39 @@ export const gameAPI = {
         enemyTypesKilled
     ) {
         try {
-            const response = await fetch(`${API_URL}/scores`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    player_name: playerName,
-                    score,
-                    level,
-                    kills,
-                    playtime,
-                    shots_fired: shotsFired,
-                    shots_hit: shotsHit,
-                    accuracy,
-                    damage_dealt: damageDealt,
-                    damage_taken: damageTaken,
-                    bosses_defeated: bossesDefeated,
-                    boss_types_defeated: bossTypesDefeated,
-                    powerups_collected: powerupsCollected,
-                    favorite_weapon: favoriteWeapon,
-                    rapid_fire_used: rapidFireUsed,
-                    double_shot_used: doubleShotUsed,
-                    shield_used: shieldUsed,
-                    shotgun_used: shotgunUsed,
-                    laser_used: laserUsed,
-                    missile_used: missileUsed,
-                    pulse_used: pulseUsed,
-                    health_collected: healthCollected,
-                    dashes_used: dashesUsed,
-                    max_combo: maxCombo,
-                    perfect_levels: perfectLevels,
-                    enemy_types_killed: enemyTypesKilled
-                })
-            });
+            const scoreData = {
+                player_name: playerName,
+                score,
+                level,
+                kills,
+                playtime,
+                shots_fired: shotsFired,
+                shots_hit: shotsHit,
+                accuracy,
+                damage_dealt: damageDealt,
+                damage_taken: damageTaken,
+                bosses_defeated: bossesDefeated,
+                boss_types_defeated: bossTypesDefeated,
+                powerups_collected: powerupsCollected,
+                favorite_weapon: favoriteWeapon,
+                rapid_fire_used: rapidFireUsed,
+                double_shot_used: doubleShotUsed,
+                shield_used: shieldUsed,
+                shotgun_used: shotgunUsed,
+                laser_used: laserUsed,
+                missile_used: missileUsed,
+                pulse_used: pulseUsed,
+                health_collected: healthCollected,
+                dashes_used: dashesUsed,
+                max_combo: maxCombo,
+                perfect_levels: perfectLevels,
+                enemy_types_killed: enemyTypesKilled
+            };
 
-            if (!response.ok) {
-                throw new Error('Failed to save score');
-            }
-
-            return await response.json();
+            return await gameDB.saveScore(scoreData);
         } catch (error) {
             console.error('Error saving score:', error);
-            // Fallback to localStorage if server is down
+            // Fallback to localStorage if Supabase fails
             this.saveScoreLocally(playerName, score, level, kills);
             throw error;
         }
@@ -64,14 +53,7 @@ export const gameAPI = {
     // Get top scores (leaderboard)
     async getTopScores(limit = 10) {
         try {
-            const response = await fetch(`${API_URL}/scores?limit=${limit}`);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch scores');
-            }
-
-            const data = await response.json();
-            return data.scores;
+            return await gameDB.getTopScores(limit);
         } catch (error) {
             console.error('Error fetching scores:', error);
             return [];
@@ -81,14 +63,7 @@ export const gameAPI = {
     // Get player's best score
     async getPlayerBest(playerName) {
         try {
-            const response = await fetch(`${API_URL}/scores/${encodeURIComponent(playerName)}`);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch player score');
-            }
-
-            const data = await response.json();
-            return data.score;
+            return await gameDB.getPlayerBest(playerName);
         } catch (error) {
             console.error('Error fetching player score:', error);
             return null;
@@ -98,14 +73,7 @@ export const gameAPI = {
     // Get player stats
     async getPlayerStats(playerName) {
         try {
-            const response = await fetch(`${API_URL}/stats/${encodeURIComponent(playerName)}`);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch player stats');
-            }
-
-            const data = await response.json();
-            return data.stats;
+            return await gameDB.getPlayerStats(playerName);
         } catch (error) {
             console.error('Error fetching player stats:', error);
             return null;
@@ -115,31 +83,24 @@ export const gameAPI = {
     // Get global leaderboard
     async getLeaderboard() {
         try {
-            const response = await fetch(`${API_URL}/leaderboard`);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch leaderboard');
-            }
-
-            const data = await response.json();
-            return data.leaderboard;
+            return await gameDB.getLeaderboard();
         } catch (error) {
             console.error('Error fetching leaderboard:', error);
             return [];
         }
     },
 
-    // Check if server is running
+    // Check if Supabase is configured
     async checkHealth() {
         try {
-            const response = await fetch(`${API_URL}/health`);
-            return response.ok;
+            await gameDB.getTopScores(1);
+            return true;
         } catch (error) {
             return false;
         }
     },
 
-    // Fallback: Save to localStorage if server is down
+    // Fallback: Save to localStorage if Supabase is down
     saveScoreLocally(playerName, score, level, kills) {
         const scores = JSON.parse(localStorage.getItem('offlineScores') || '[]');
         scores.push({
