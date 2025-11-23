@@ -120,6 +120,15 @@ export class GameEngine {
         // Mouse Aim
         this.mouse = input.mouse;
 
+        // Twin-stick: Update crosshair position based on aim joystick
+        if (input.aimJoystick && input.aimJoystick.active && (input.aimJoystick.x !== 0 || input.aimJoystick.y !== 0)) {
+            const crosshairDist = 250;
+            this.mouse = {
+                x: this.player.x + input.aimJoystick.x * crosshairDist,
+                y: this.player.y + input.aimJoystick.y * crosshairDist
+            };
+        }
+
         // Firing
         if (isFiring) {
             const now = Date.now() / 1000;
