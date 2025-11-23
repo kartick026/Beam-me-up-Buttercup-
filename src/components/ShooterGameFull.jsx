@@ -217,8 +217,19 @@ export default function ShooterGameFull() {
         setLives(3); // Reset lives to 3
 
         const canvas = canvasRef.current;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+
+        // Force full screen
+        const updateCanvasSize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (engineRef.current) {
+                engineRef.current.width = window.innerWidth;
+                engineRef.current.height = window.innerHeight;
+            }
+        };
+
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
 
         engineRef.current = new GameEngine(
             canvas.width,
