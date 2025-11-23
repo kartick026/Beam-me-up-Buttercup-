@@ -645,35 +645,39 @@ export default function ShooterGameFull() {
             {/* Mobile Controls Overlay */}
             {gameState === 'playing' && (
                 <>
-                    {/* Visual Joystick */}
+                    {/* Visual Joystick - Movement */}
                     {inputRef.current.joystick.active && (
                         <div style={{
                             position: 'absolute',
-                            left: inputRef.current.joystick.startX - 50,
-                            top: inputRef.current.joystick.startY - 50,
-                            width: 100,
-                            height: 100,
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            background: 'rgba(255, 255, 255, 0.05)',
+                            left: inputRef.current.joystick.startX,
+                            top: inputRef.current.joystick.startY,
+                            width: 120,
+                            height: 120,
+                            border: '3px solid rgba(0, 240, 255, 0.6)',
+                            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(0, 240, 255, 0.05) 70%, transparent 100%)',
                             borderRadius: '50%',
                             pointerEvents: 'none',
-                            transform: 'translate(-50%, -50%)'
+                            transform: 'translate(-50%, -50%)',
+                            boxShadow: '0 0 20px rgba(0, 240, 255, 0.4), inset 0 0 20px rgba(0, 240, 255, 0.2)',
+                            transition: 'all 0.1s ease-out'
                         }}>
                             <div style={{
                                 position: 'absolute',
-                                left: 50 + inputRef.current.joystick.x * 50,
-                                top: 50 + inputRef.current.joystick.y * 50,
-                                width: 40,
-                                height: 40,
-                                background: 'rgba(0, 240, 255, 0.5)',
+                                left: '50%',
+                                top: '50%',
+                                width: 50,
+                                height: 50,
+                                background: 'radial-gradient(circle, rgba(0, 240, 255, 0.9) 0%, rgba(0, 240, 255, 0.6) 100%)',
                                 borderRadius: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                boxShadow: '0 0 10px #00f0ff'
+                                transform: `translate(calc(-50% + ${inputRef.current.joystick.x * 35}px), calc(-50% + ${inputRef.current.joystick.y * 35}px))`,
+                                boxShadow: '0 0 15px rgba(0, 240, 255, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5)',
+                                border: '2px solid rgba(255, 255, 255, 0.8)',
+                                transition: 'transform 0.05s ease-out'
                             }} />
                         </div>
                     )}
 
-                    {/* Dash Button */}
+                    {/* Dash Button - Mobile Only */}
                     <div
                         style={{
                             position: 'absolute',
@@ -684,7 +688,7 @@ export default function ShooterGameFull() {
                             background: 'rgba(0, 240, 255, 0.2)',
                             border: '2px solid rgba(0, 240, 255, 0.5)',
                             borderRadius: '50%',
-                            display: 'flex',
+                            display: window.innerWidth <= 768 ? 'flex' : 'none',
                             alignItems: 'center',
                             justifyContent: 'center',
                             pointerEvents: 'auto',
@@ -697,30 +701,34 @@ export default function ShooterGameFull() {
                     </div>
 
 
-                    {/* Aim Joystick Visual */}
+                    {/* Aim Joystick Visual - Fire */}
                     {inputRef.current.aimJoystick.active && (
                         <div style={{
                             position: 'absolute',
-                            left: inputRef.current.aimJoystick.startX - 50,
-                            top: inputRef.current.aimJoystick.startY - 50,
-                            width: 100,
-                            height: 100,
-                            border: '2px solid rgba(255, 50, 50, 0.3)',
-                            background: 'rgba(255, 50, 50, 0.05)',
+                            left: inputRef.current.aimJoystick.startX,
+                            top: inputRef.current.aimJoystick.startY,
+                            width: 120,
+                            height: 120,
+                            border: '3px solid rgba(255, 80, 80, 0.6)',
+                            background: 'radial-gradient(circle, rgba(255, 80, 80, 0.15) 0%, rgba(255, 80, 80, 0.05) 70%, transparent 100%)',
                             borderRadius: '50%',
                             pointerEvents: 'none',
-                            transform: 'translate(-50%, -50%)'
+                            transform: 'translate(-50%, -50%)',
+                            boxShadow: '0 0 20px rgba(255, 80, 80, 0.4), inset 0 0 20px rgba(255, 80, 80, 0.2)',
+                            transition: 'all 0.1s ease-out'
                         }}>
                             <div style={{
                                 position: 'absolute',
-                                left: 50 + inputRef.current.aimJoystick.x * 50,
-                                top: 50 + inputRef.current.aimJoystick.y * 50,
-                                width: 40,
-                                height: 40,
-                                background: 'rgba(255, 50, 50, 0.5)',
+                                left: '50%',
+                                top: '50%',
+                                width: 50,
+                                height: 50,
+                                background: 'radial-gradient(circle, rgba(255, 80, 80, 0.9) 0%, rgba(255, 50, 50, 0.6) 100%)',
                                 borderRadius: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                boxShadow: '0 0 10px #ff3232'
+                                transform: `translate(calc(-50% + ${inputRef.current.aimJoystick.x * 35}px), calc(-50% + ${inputRef.current.aimJoystick.y * 35}px))`,
+                                boxShadow: '0 0 15px rgba(255, 80, 80, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5)',
+                                border: '2px solid rgba(255, 255, 255, 0.8)',
+                                transition: 'transform 0.05s ease-out'
                             }} />
                         </div>
                     )}
