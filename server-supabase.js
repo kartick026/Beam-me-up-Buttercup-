@@ -10,7 +10,7 @@ import cors from 'cors';
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Supabase configuration
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -35,7 +35,7 @@ async function testConnection() {
             .from('scores')
             .select('id')
             .limit(1);
-        
+
         if (error) {
             console.error('❌ Supabase connection error:', error.message);
         } else {
@@ -54,7 +54,7 @@ testConnection();
 app.get('/api/scores', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
-        
+
         const { data, error } = await supabase
             .from('scores')
             .select('*')

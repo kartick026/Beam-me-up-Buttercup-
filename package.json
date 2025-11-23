@@ -7,6 +7,7 @@
         "dev": "vite",
         "server": "node server.js",
         "server:supabase": "node server-supabase.js",
+        "start": "node server-supabase.js",
         "migrate": "node migrate-to-supabase.js",
         "build": "vite build",
         "lint": "eslint .",
@@ -16,6 +17,9 @@
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.4.0",
         "@supabase/supabase-js": "^2.84.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.6.1",
+        "express": "^5.1.0",
         "framer-motion": "^12.23.24",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -25,9 +29,6 @@
         "@types/react": "^18.3.3",
         "@types/react-dom": "^18.3.0",
         "@vitejs/plugin-react": "^4.3.1",
-        "cors": "^2.8.5",
-        "dotenv": "^16.6.1",
-        "express": "^5.1.0",
         "sqlite3": "^5.1.7",
         "vite": "^5.4.1"
     }
