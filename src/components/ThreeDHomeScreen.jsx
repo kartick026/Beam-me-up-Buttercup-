@@ -1,7 +1,7 @@
 import React from 'react';
 import StarfieldBackground from './UI/StarfieldBackground';
 
-export default function ThreeDHomeScreen({ onStartGame }) {
+export default function ThreeDHomeScreen({ onStartGame, onShowLeaderboard }) {
     return (
         <StarfieldBackground>
             <div style={{
@@ -74,6 +74,41 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                     START MISSION
                 </button>
 
+                {/* Leaderboard Button */}
+                <button
+                    onClick={onShowLeaderboard}
+                    style={{
+                        marginTop: '20px',
+                        padding: 'clamp(10px, 2.5vw, 15px) clamp(25px, 5vw, 60px)',
+                        fontSize: 'clamp(14px, 3vw, 24px)',
+                        fontWeight: '700',
+                        color: '#ffed4e',
+                        background: 'transparent',
+                        border: '2px solid #ffed4e',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontFamily: "'GameFont', cursive",
+                        letterSpacing: '3px',
+                        boxShadow: '0 0 15px rgba(255, 237, 78, 0.4)',
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        zIndex: 10
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                        e.target.style.background = 'rgba(255, 237, 78, 0.2)';
+                        e.target.style.boxShadow = '0 0 30px rgba(255, 237, 78, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.background = 'transparent';
+                        e.target.style.boxShadow = '0 0 15px rgba(255, 237, 78, 0.4)';
+                    }}
+                >
+                    🏆 LEADERBOARD
+                </button>
+
                 <div style={{
                     position: 'absolute',
                     bottom: '20px',
@@ -84,6 +119,7 @@ export default function ThreeDHomeScreen({ onStartGame }) {
                     v1.0.0 • REACT SHOOTER
                 </div>
             </div>
+
 
             <style>{`
                 @keyframes pulse {

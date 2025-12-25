@@ -10,6 +10,7 @@ import ThreeDHomeScreen from './ThreeDHomeScreen';
 import PlayerStatsDisplay from './PlayerStatsDisplay';
 import { gameAPI } from '../utils/api';
 import StarfieldBackground from './UI/StarfieldBackground';
+import Leaderboard from './Leaderboard';
 
 export default function ShooterGameFull() {
     const canvasRef = useRef(null);
@@ -25,6 +26,7 @@ export default function ShooterGameFull() {
     const [musicEnabled, setMusicEnabled] = useState(true);
     const [sfxEnabled, setSfxEnabled] = useState(true);
     const [showHowToPlay, setShowHowToPlay] = useState(false);
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
     const [lives, setLives] = useState(3); // 3 lives system
     const [playerName, setPlayerName] = useState('');
     const [playerStats, setPlayerStats] = useState(null);
@@ -737,7 +739,10 @@ export default function ShooterGameFull() {
 
             {/* Home Screen - 3D Animated */}
             {gameState === 'home' && (
-                <ThreeDHomeScreen onStartGame={() => setGameState('setup')} />
+                <ThreeDHomeScreen
+                    onStartGame={() => setGameState('setup')}
+                    onShowLeaderboard={() => setShowLeaderboard(true)}
+                />
             )}
 
             {/* Setup Screen - Name & Instructions */}
@@ -1222,10 +1227,42 @@ export default function ShooterGameFull() {
                             PLAY AGAIN
                         </button>
 
+                        {/* Leaderboard Button */}
+                        <button
+                            onClick={() => setShowLeaderboard(true)}
+                            style={{
+                                marginTop: '15px',
+                                padding: '12px 40px',
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#ffed4e',
+                                background: 'rgba(255, 237, 78, 0.1)',
+                                border: '2px solid #ffed4e',
+                                borderRadius: '25px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                fontFamily: "'GameFont', cursive"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = 'rgba(255, 237, 78, 0.2)';
+                                e.target.style.boxShadow = '0 0 20px rgba(255, 237, 78, 0.4)';
+                                e.target.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = 'rgba(255, 237, 78, 0.1)';
+                                e.target.style.boxShadow = 'none';
+                                e.target.style.transform = 'scale(1)';
+                            }}
+                        >
+                            🏆 VIEW LEADERBOARD
+                        </button>
+
                         <button
                             onClick={() => setGameState('home')}
                             style={{
-                                marginTop: '20px',
+                                marginTop: '15px',
                                 padding: '12px 40px',
                                 fontSize: '16px',
                                 fontWeight: 'bold',
@@ -1254,6 +1291,12 @@ export default function ShooterGameFull() {
                     </div>
                 )
             }
+
+            {/* Leaderboard Overlay */}
+            {showLeaderboard && (
+                <Leaderboard onClose={() => setShowLeaderboard(false)} />
+            )}
+
             {
                 isPortrait && (
                     <div style={{
